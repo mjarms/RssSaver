@@ -25,7 +25,7 @@ require_once('config.php');
 
 /* ------------------------------------------------------------ */
 
-$repertoire = dirname(__FILE__)."/files/";
+$repertoire = dirname(__FILE__)."/files";
 $files = scandir($repertoire);
 $keyword = "openssl";
 
@@ -40,15 +40,33 @@ foreach ($files as $file) {
     // Chemin complet du fichier
     $cheminFichier = $repertoire . '/' . $file;
 
+    echo "Traitement du fichier".$cheminFichier."\n";
+
     // Vérifier s'il s'agit d'un fichier XML
     if (is_file($cheminFichier) && pathinfo($cheminFichier, PATHINFO_EXTENSION) === 'xml') {
+        
+        // Vérification de la structure XML
+        echo "Vérification de la structure XML\n";
+        foreach($urls as $url){
+            if($url['nom'] == explode('.',$file)[0]) {
+                $structure = $url['structure'];
+                echo "Structure trouvée : $structure\n";
+                break;
+            }
+        }
+
+        $chaine = implode('->',explode(',',$structure));
+        //var_dump($chaine);
+
         $xml = simplexml_load_file($cheminFichier);
-        foreach ($xml->channel->item as $item) {
+        foreach ($xml->$chaine as $item) {
             // Accéder aux éléments de l'item
             $title = $item->title;
             $description = $item->description;
             $link = $item->link;
             $pubDate = $item->pubDate;
+
+            //echo $title."\n";
         
             // Recherche du mot en ignorant la casse
             if (preg_match('/' . $keyword . '/i', $title) or preg_match('/' . $keyword . '/i', $description)) {
