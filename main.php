@@ -20,7 +20,7 @@ require_once('config.php');
     echo "Création des fichiers XML\n";
     foreach($urls as $url) {
         $contents = file_get_contents($url['lien']);
-        file_put_contents("files/".$url['nom'].".xml", $contents);
+        //file_put_contents("files/".$url['nom'].".xml", $contents);
     }
 
 /* ------------------------------------------------------------ */
@@ -56,9 +56,11 @@ foreach ($files as $file) {
         }
 
         $chaine = implode('->',explode(',',$structure));
-        //var_dump($chaine);
+        var_dump($chaine);
+        // Retourne propriété1->propriété2 selon la structure
 
         $xml = simplexml_load_file($cheminFichier);
+
         foreach ($xml->$chaine as $item) {
             // Accéder aux éléments de l'item
             $title = $item->title;
@@ -68,13 +70,14 @@ foreach ($files as $file) {
 
             //echo $title."\n";
         
-            // Recherche du mot en ignorant la casse
+            // Recherche du mot en ignorant la casse (regex)
             if (preg_match('/' . $keyword . '/i', $title) or preg_match('/' . $keyword . '/i', $description)) {
 
                 // Vérification de doublon
                 $checkreq = "SELECT * FROM `flux` WHERE title='".$title."'";
                 $res = $conn->query($checkreq);
                 if($res->num_rows > 0) {
+                    echo "Article déjà existant\n";
                     continue;
                 } else {
                     $sqlreq = "
@@ -96,3 +99,48 @@ foreach ($files as $file) {
         }
     }
 }
+
+echo "Fin de la récupération des flux RSS\n";
+
+/* ------------------------------------------------------------ */
+
+echo "Création du fichier XML final\n";
+
+// Requête pour récupérer les données de la base
+    $sqlflux = "SELECT * FROM  `flux`";
+    $result = $conn->query($sqlflux);
+
+// Création du document XML
+    $xml = new DOMDocument('1.0', 'utf-8');
+    $rss = $xml->createElement('rss');
+    $rss->setAttribute('version', '2.0');
+    $xml->appendChild($rss);
+
+// Création de l'élément channel
+    $channel = $xml->createElement('channel');
+    $rss->appendChild($channel);
+
+// Boucle pour parcourir les données et créer les éléments item
+while ($row = $result->fetch_assoc()) {
+    $item = $xml->createElement('item');
+    $channel->appendChild($item);
+
+    // Création des éléments title, description, etc. (à adapter selon les données de votre base)
+    $title = $xml->createElement('title', $row['title']);
+    $item->appendChild($title);
+
+    $description = $xml->createElement('description', $row['description']);
+    $item->appendChild($description);
+
+    $link = $xml->createElement('link', $row['link']);
+    $item->appendChild($link);
+
+    $pubDate = $xml->createElement('pubDate', $row['pubDate']);
+    $item->appendChild($pubDate);
+}
+
+// Enregistrement du document XML dans un fichier
+$xml->formatOutput = true;
+$xml->save('output.xml');
+
+echo "Fin du script\n";
