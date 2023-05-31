@@ -20,7 +20,7 @@ require_once('config.php');
     echo "Création des fichiers XML\n";
     foreach($urls as $url) {
         $contents = file_get_contents($url['lien']);
-        //file_put_contents("files/".$url['nom'].".xml", $contents);
+        file_put_contents("files/".$url['nom'].".xml", $contents);
     }
 
 /* ------------------------------------------------------------ */
@@ -45,7 +45,7 @@ foreach ($files as $file) {
     // Vérifier s'il s'agit d'un fichier XML
     if (is_file($cheminFichier) && pathinfo($cheminFichier, PATHINFO_EXTENSION) === 'xml') {
         
-        // Vérification de la structure XML
+        /* Vérification de la structure XML
         echo "Vérification de la structure XML\n";
         foreach($urls as $url){
             if($url['nom'] == explode('.',$file)[0]) {
@@ -53,22 +53,24 @@ foreach ($files as $file) {
                 echo "Structure trouvée : $structure\n";
                 break;
             }
-        }
-
+        } 
         $chaine = implode('->',explode(',',$structure));
-        var_dump($chaine);
+        //var_dump($chaine);
         // Retourne propriété1->propriété2 selon la structure
+        */        
 
         $xml = simplexml_load_file($cheminFichier);
+        $balises = $xml->xpath('//item');
+        //var_dump($balises);
 
-        foreach ($xml->$chaine as $item) {
+        foreach ($xml->item as $item) {
             // Accéder aux éléments de l'item
             $title = $item->title;
             $description = $item->description;
             $link = $item->link;
             $pubDate = $item->pubDate;
 
-            //echo $title."\n";
+            echo $title."\n";
         
             // Recherche du mot en ignorant la casse (regex)
             if (preg_match('/' . $keyword . '/i', $title) or preg_match('/' . $keyword . '/i', $description)) {
@@ -78,7 +80,6 @@ foreach ($files as $file) {
                 $res = $conn->query($checkreq);
                 if($res->num_rows > 0) {
                     echo "Article déjà existant\n";
-                    continue;
                 } else {
                     $sqlreq = "
                         INSERT INTO `flux`(`title`, `description`, `link`, `pubDate`) VALUES (
